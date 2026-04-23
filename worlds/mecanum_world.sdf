@@ -1,0 +1,565 @@
+<?xml version="1.0" ?>
+<!--
+  Restaurant Delivery World — Ignition Gazebo Fortress
+  Step 2: Multi-room custom world for mecanum food delivery robot.
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  Top-view floor plan  (all coordinates in metres)               │
+  │                                                                 │
+  │  y=6  +──────────────+─────────────────+                       │
+  │       │  KITCHEN     │  PRIVATE DINING │                       │
+  │       │  8m wide     │  8m wide        │                       │
+  │       │  5m deep     │  5m deep        │                       │
+  │  y=1  +────+[door]───+──[door]+────────+                       │
+  │                                                                 │
+  │       +─────────────────────────────────+                      │
+  │       │                                 │                      │
+  │       │       MAIN DINING HALL          │                      │
+  │       │       16m wide × 7m deep        │                      │
+  │       │                                 │                      │
+  │  y=-6 +─────────────────────────────────+                      │
+  │      x=-8                              x=8                     │
+  │                                                                 │
+  │  Robot spawns at (0, 0) in the main hall.                       │
+  │  Wall height: 1.8 m  (robot 1.02 m, LiDAR at 0.98 m ✓)        │
+  │  Doorways:   1.0 m wide (robot footprint 0.5 m ✓)              │
+  └─────────────────────────────────────────────────────────────────┘
+-->
+<sdf version="1.6">
+  <world name="mecanum_world">
+
+    <!-- ── Physics ────────────────────────────────────────────── -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- ── Core Ignition plugins ──────────────────────────────── -->
+    <plugin filename="ignition-gazebo-physics-system"
+            name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system"
+            name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system"
+            name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- ── Sunlight ───────────────────────────────────────────── -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.95 0.92 0.85 1</diffuse>
+      <specular>0.4 0.4 0.4 1</specular>
+      <attenuation>
+        <range>1000</range><constant>0.9</constant>
+        <linear>0.01</linear><quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.4 0.1 -0.9</direction>
+    </light>
+
+    <!-- Warm indoor fill light (main hall) -->
+    <light name="hall_light" type="point">
+      <pose>0 -2 3.5 0 0 0</pose>
+      <diffuse>1.0 0.92 0.75 1</diffuse>
+      <specular>0.3 0.28 0.20 1</specular>
+      <attenuation>
+        <range>12</range><constant>0.4</constant>
+        <linear>0.05</linear><quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- Kitchen ceiling light -->
+    <light name="kitchen_light" type="point">
+      <pose>-4 3.5 3.5 0 0 0</pose>
+      <diffuse>0.85 0.90 0.95 1</diffuse>
+      <specular>0.20 0.22 0.25 1</specular>
+      <attenuation>
+        <range>10</range><constant>0.5</constant>
+        <linear>0.05</linear><quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- Private dining warm light -->
+    <light name="private_light" type="point">
+      <pose>4.5 3.5 3.5 0 0 0</pose>
+      <diffuse>1.0 0.88 0.65 1</diffuse>
+      <specular>0.25 0.22 0.15 1</specular>
+      <attenuation>
+        <range>10</range><constant>0.5</constant>
+        <linear>0.05</linear><quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- ════════════════════════════════════════════════════════════
+         GROUND PLANE
+    ════════════════════════════════════════════════════════════ -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>100 100</size></plane>
+          </geometry>
+          <surface><friction><ode><mu>50</mu><mu2>50</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>100 100</size></plane>
+          </geometry>
+          <material>
+            <ambient>0.55 0.52 0.47 1</ambient>
+            <diffuse>0.55 0.52 0.47 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Floor tiles: different colour per room ────────────── -->
+    <!-- Main dining hall floor — warm cream tile -->
+    <model name="floor_main">
+      <static>true</static>
+      <pose>0 -2.5 0.002 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>15.6 7.0 0.004</size></box></geometry>
+          <material>
+            <ambient>0.88 0.84 0.76 1</ambient>
+            <diffuse>0.88 0.84 0.76 1</diffuse>
+            <specular>0.12 0.12 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Kitchen floor — light grey (clean / industrial) -->
+    <model name="floor_kitchen">
+      <static>true</static>
+      <pose>-4 3.5 0.002 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>7.6 4.96 0.004</size></box></geometry>
+          <material>
+            <ambient>0.78 0.78 0.78 1</ambient>
+            <diffuse>0.78 0.78 0.78 1</diffuse>
+            <specular>0.20 0.20 0.20 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Private dining floor — warm wood tone -->
+    <model name="floor_private">
+      <static>true</static>
+      <pose>4 3.5 0.002 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>7.6 4.96 0.004</size></box></geometry>
+          <material>
+            <ambient>0.62 0.44 0.24 1</ambient>
+            <diffuse>0.62 0.44 0.24 1</diffuse>
+            <specular>0.18 0.12 0.06 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         OUTER BOUNDARY WALLS
+         All walls: height=1.8 m, thickness=0.20 m
+         Wall centres at z=0.9 m (half of 1.8 m)
+         Cream / off-white painted plaster
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- North outer wall  y=+6.1 -->
+    <model name="wall_outer_north">
+      <static>true</static>
+      <pose>0 6.1 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>16.2 0.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>16.2 0.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- South outer wall  y=-6.1 -->
+    <model name="wall_outer_south">
+      <static>true</static>
+      <pose>0 -6.1 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>16.2 0.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>16.2 0.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East outer wall  x=+8.1 -->
+    <model name="wall_outer_east">
+      <static>true</static>
+      <pose>8.1 0 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.2 12.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.2 12.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- West outer wall  x=-8.1 -->
+    <model name="wall_outer_west">
+      <static>true</static>
+      <pose>-8.1 0 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.2 12.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.2 12.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         INTERIOR HORIZONTAL DIVIDER  (y = 1.0)
+         Separates main dining hall from the two back rooms.
+         Three segments with two 1.0 m doorways:
+           Doorway A (Kitchen):       x = -3.0 to -2.0
+           Doorway B (Private Dining): x = +2.0 to +3.0
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- West segment: x = -8.0 to -3.0  (length 5 m) -->
+    <model name="wall_div_h_west">
+      <static>true</static>
+      <pose>-5.5 1.0 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>5.0 0.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>5.0 0.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Middle segment: x = -2.0 to +2.0  (length 4 m, between the two doors) -->
+    <model name="wall_div_h_mid">
+      <static>true</static>
+      <pose>0 1.0 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>4.0 0.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>4.0 0.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East segment: x = +3.0 to +8.0  (length 5 m) -->
+    <model name="wall_div_h_east">
+      <static>true</static>
+      <pose>5.5 1.0 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>5.0 0.2 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>5.0 0.2 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         INTERIOR VERTICAL DIVIDER  (x = 0)
+         Separates Kitchen (west) from Private Dining (east).
+         Runs from y=+1 to y=+6  (full depth of back rooms).
+         No doorway — rooms connect only through main hall.
+    ════════════════════════════════════════════════════════════ -->
+    <model name="wall_div_v">
+      <static>true</static>
+      <pose>0 3.5 0.9 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.2 5.0 1.8</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.2 5.0 1.8</size></box></geometry>
+          <material>
+            <ambient>0.92 0.89 0.84 1</ambient>
+            <diffuse>0.92 0.89 0.84 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         DOOR FRAMES — thin coloured strips above each doorway
+         (visual accent so doorways are obvious in Gazebo)
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- Kitchen doorway header (above the 1 m gap at x=-2.5) -->
+    <model name="door_frame_kitchen">
+      <static>true</static>
+      <pose>-2.5 1.0 1.7 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>1.0 0.22 0.2</size></box></geometry>
+          <material>
+            <ambient>0.55 0.38 0.18 1</ambient>
+            <diffuse>0.55 0.38 0.18 1</diffuse>
+            <specular>0.15 0.10 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Private dining doorway header (above the 1 m gap at x=+2.5) -->
+    <model name="door_frame_private">
+      <static>true</static>
+      <pose>2.5 1.0 1.7 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>1.0 0.22 0.2</size></box></geometry>
+          <material>
+            <ambient>0.55 0.38 0.18 1</ambient>
+            <diffuse>0.55 0.38 0.18 1</diffuse>
+            <specular>0.15 0.10 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         MAIN DINING HALL FURNITURE
+         Tables: 0.75 × 0.75 × 0.76 m dark wood
+         Robot starts at (0,0) facing +X — tables placed to leave
+         clear corridors wide enough for the robot to navigate.
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- Row 1 (y ≈ -4.5) — west side -->
+    <model name="table_1">
+      <static>true</static>
+      <pose>-5.5 -4.5 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="table_2">
+      <static>true</static>
+      <pose>-5.5 -2.0 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Row 1 — east side -->
+    <model name="table_3">
+      <static>true</static>
+      <pose>5.5 -4.5 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="table_4">
+      <static>true</static>
+      <pose>5.5 -2.0 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Centre table (in front of robot start) -->
+    <model name="table_5">
+      <static>true</static>
+      <pose>3.0 -3.5 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="table_6">
+      <static>true</static>
+      <pose>-3.0 -3.5 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.75 0.75 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.75 0.75 0.76</size></box></geometry>
+          <material>
+            <ambient>0.32 0.20 0.08 1</ambient>
+            <diffuse>0.35 0.22 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Host/reception stand near south entrance -->
+    <model name="reception_desk">
+      <static>true</static>
+      <pose>0 -5.2 0.55 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>1.6 0.55 1.1</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>1.6 0.55 1.1</size></box></geometry>
+          <material>
+            <ambient>0.45 0.28 0.10 1</ambient>
+            <diffuse>0.48 0.30 0.11 1</diffuse>
+            <specular>0.18 0.11 0.04 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         KITCHEN FURNITURE
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- Main prep counter along north wall -->
+    <model name="kitchen_counter_north">
+      <static>true</static>
+      <pose>-4.0 5.5 0.45 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>6.5 0.65 0.90</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>6.5 0.65 0.90</size></box></geometry>
+          <material>
+            <ambient>0.68 0.68 0.68 1</ambient>
+            <diffuse>0.70 0.70 0.70 1</diffuse>
+            <specular>0.45 0.45 0.45 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Side prep counter along west wall -->
+    <model name="kitchen_counter_west">
+      <static>true</static>
+      <pose>-7.5 3.5 0.45 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.65 3.5 0.90</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.65 3.5 0.90</size></box></geometry>
+          <material>
+            <ambient>0.68 0.68 0.68 1</ambient>
+            <diffuse>0.70 0.70 0.70 1</diffuse>
+            <specular>0.45 0.45 0.45 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ════════════════════════════════════════════════════════════
+         PRIVATE DINING FURNITURE
+    ════════════════════════════════════════════════════════════ -->
+
+    <!-- Large round (approx) dining table -->
+    <model name="private_table">
+      <static>true</static>
+      <pose>4.5 3.8 0.38 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>1.4 1.4 0.76</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>1.4 1.4 0.76</size></box></geometry>
+          <material>
+            <ambient>0.28 0.16 0.06 1</ambient>
+            <diffuse>0.30 0.18 0.07 1</diffuse>
+            <specular>0.18 0.10 0.04 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Small side cabinet -->
+    <model name="private_cabinet">
+      <static>true</static>
+      <pose>7.5 5.3 0.60 0 0 0</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.60 1.20 1.20</size></box></geometry></collision>
+        <visual name="v">
+          <geometry><box><size>0.60 1.20 1.20</size></box></geometry>
+          <material>
+            <ambient>0.35 0.22 0.08 1</ambient>
+            <diffuse>0.37 0.24 0.09 1</diffuse>
+            <specular>0.12 0.08 0.03 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

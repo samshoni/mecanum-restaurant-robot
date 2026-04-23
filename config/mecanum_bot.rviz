@@ -1,0 +1,144 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+  - Class: nav2_rviz_plugins/Navigation 2
+    Name: Navigation2
+
+Visualization Manager:
+  Class: ""
+  Enabled: true
+  Global Options:
+    Background Color: 40; 40; 40
+    Fixed Frame: map
+    Frame Rate: 30
+
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Color: 100; 100; 100
+      Plane: XY
+      Plane Cell Count: 30
+
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Alpha: 1
+      Description Topic:
+        Value: /robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+        Depth: 5
+
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Enabled: true
+      Topic:
+        Value: /map
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+        Depth: 5
+      Alpha: 0.7
+      Color Scheme: map
+      Draw Behind: false
+      Use Timestamp: false
+
+    - Class: rviz_default_plugins/Map
+      Name: GlobalCostmap
+      Enabled: false
+      Topic:
+        Value: /global_costmap/costmap
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        Depth: 5
+      Alpha: 0.45
+      Color Scheme: costmap
+
+    - Class: rviz_default_plugins/Map
+      Name: LocalCostmap
+      Enabled: false
+      Topic:
+        Value: /local_costmap/costmap
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        Depth: 5
+      Alpha: 0.45
+      Color Scheme: costmap
+
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+        Depth: 5
+      Color: 255; 60; 0
+      Size (m): 0.04
+      Style: Points
+      Decay Time: 0
+
+    - Class: rviz_default_plugins/Path
+      Name: GlobalPlan
+      Enabled: false
+      Topic:
+        Value: /plan
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        Depth: 5
+      Color: 0; 255; 0
+      Line Style: Lines
+      Line Width: 0.03
+
+    - Class: rviz_default_plugins/Path
+      Name: LocalPlan
+      Enabled: false
+      Topic:
+        Value: /local_plan
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        Depth: 5
+      Color: 0; 0; 255
+      Line Style: Lines
+      Line Width: 0.03
+
+    - Class: rviz_default_plugins/Polygon
+      Name: Footprint
+      Enabled: false
+      Topic:
+        Value: /local_costmap/published_footprint
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+        Depth: 5
+      Color: 255; 255; 0
+
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: false
+      Show Axes: true
+      Show Arrows: false
+      Show Names: true
+      Marker Scale: 0.25
+
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: nav2_rviz_plugins/GoalTool
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Scale: 50
+      Angle: 0
+      X: 0
+      Y: 0
+
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+
+  Value: true

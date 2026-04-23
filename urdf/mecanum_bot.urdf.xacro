@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<!--
+  Mecanum Bot URDF — used by robot_state_publisher for TF + RViz visualisation.
+  Geometry matches model.sdf exactly so RViz and Gazebo stay in sync.
+
+  Link frames:
+    base_footprint  — virtual footprint on the ground (z = 0)
+    base_link       — chassis centre       (z = 0.15 m above footprint)
+    *_wheel         — wheel centres        (z = -0.05 m below base_link)
+    lidar_link      — LiDAR centre         (z = +0.10 m above base_link)
+-->
+<robot name="mecanum_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ── Materials ──────────────────────────────────────────────── -->
+  <material name="blue">
+    <color rgba="0.2 0.4 0.8 1.0"/>
+  </material>
+  <material name="dark_grey">
+    <color rgba="0.15 0.15 0.15 1.0"/>
+  </material>
+  <material name="red">
+    <color rgba="0.8 0.1 0.1 1.0"/>
+  </material>
+
+  <!-- ── Inertia macros ─────────────────────────────────────────── -->
+  <xacro:macro name="box_inertia" params="m x y z">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia
+        ixx="${m/12.0*(y*y+z*z)}" ixy="0" ixz="0"
+        iyy="${m/12.0*(x*x+z*z)}" iyz="0"
+        izz="${m/12.0*(x*x+y*y)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="m r h">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia
+        ixx="${m/12.0*(3*r*r+h*h)}" ixy="0" ixz="0"
+        iyy="${m/12.0*(3*r*r+h*h)}" iyz="0"
+        izz="${m/2.0*r*r}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ── base_footprint (ground projection, Nav2 convention) ───── -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child  link="base_link"/>
+    <origin xyz="0 0 0.15" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ── Chassis (base_link) ────────────────────────────────────── -->
+  <link name="base_link">
+    <xacro:box_inertia m="10.0" x="0.5" y="0.35" z="0.1"/>
+    <visual>
+      <geometry><box size="0.5 0.35 0.1"/></geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.5 0.35 0.1"/></geometry>
+    </collision>
+  </link>
+
+  <!-- ── Wheel macro ────────────────────────────────────────────── -->
+  <!--
+    joint origin xyz: position of wheel centre in base_link frame
+      x = ±wheelbase/2  = ±0.175
+      y = ±track/2      = ±0.200
+      z = wheel_z - chassis_z = 0.10 - 0.15 = -0.05
+    joint origin rpy: -π/2 roll tilts wheel so its cylinder axis aligns with Y
+    joint axis xyz: 0 0 1 in child frame = 0 1 0 in parent frame → spins around Y
+  -->
+  <xacro:macro name="mecanum_wheel" params="name x y">
+    <link name="${name}">
+      <xacro:cylinder_inertia m="0.5" r="0.1" h="0.05"/>
+      <visual>
+        <geometry><cylinder radius="0.1" length="0.05"/></geometry>
+        <material name="dark_grey"/>
+      </visual>
+      <collision>
+        <!-- Sphere approximation matches the SDF collision for consistent physics -->
+        <geometry><sphere radius="0.1"/></geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child  link="${name}"/>
+      <origin xyz="${x} ${y} -0.05" rpy="-1.5707 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:mecanum_wheel name="front_left_wheel"  x=" 0.175" y=" 0.2"/>
+  <xacro:mecanum_wheel name="front_right_wheel" x=" 0.175" y="-0.2"/>
+  <xacro:mecanum_wheel name="rear_left_wheel"   x="-0.175" y=" 0.2"/>
+  <xacro:mecanum_wheel name="rear_right_wheel"  x="-0.175" y="-0.2"/>
+
+  <!-- ── LiDAR ──────────────────────────────────────────────────── -->
+  <link name="lidar_link">
+    <xacro:cylinder_inertia m="0.1" r="0.05" h="0.04"/>
+    <visual>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+      <material name="red"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="lidar_link"/>
+    <!-- 0.83 m above base_link centre = on top of head (model frame z=0.98) -->
+    <origin xyz="0 0 0.83" rpy="0 0 0"/>
+  </joint>
+
+</robot>

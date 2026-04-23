@@ -1,0 +1,51 @@
+# Restaurant table registry — approach poses for the delivery robot.
+#
+# `pose` is where the ROBOT stops to deliver (NOT the table center).
+# Robot faces the table so the front-facing shelves present correctly.
+# yaw convention: 0 = +x, π/2 = +y, -π/2 = -y, π = -x.
+#
+# Coordinate frame: `map` (same frame as saved restaurant_map.yaml).
+# World layout:
+#   Main dining  x[-10,+14] y[-8,+4]     (6 rectangular tables)
+#   Kitchen      x[-10,-2]  y[+4,+12]
+#   Private      x[-2,+6]   y[+4,+12]    (2 round tables)
+#   Lounge       x[+6,+14]  y[+4,+12]
+#   Doorways at y=4: kitchen x[-6.75,-5.25], private x[1.25,2.75], lounge x[9.25,10.75]
+
+home:
+  name: "Kitchen"
+  pose: {x: -6.0, y: 6.5, yaw: -1.5708}   # inside kitchen, facing the doorway
+
+tables:
+  - id: 1
+    zone: "Main Dining"
+    table_center: {x: -6.5, y: -5.5}
+    pose: {x: -6.5, y: -3.6, yaw: -1.5708}
+  - id: 2
+    zone: "Main Dining"
+    table_center: {x: 0.5, y: -5.5}
+    pose: {x: 0.5, y: -3.6, yaw: -1.5708}
+  - id: 3
+    zone: "Main Dining"
+    table_center: {x: 7.5, y: -5.5}
+    pose: {x: 7.5, y: -3.6, yaw: -1.5708}
+  - id: 4
+    zone: "Main Dining"
+    table_center: {x: -5.0, y: -1.5}
+    pose: {x: -5.0, y: 0.3, yaw: -1.5708}
+  - id: 5
+    zone: "Main Dining"
+    table_center: {x: 2.0, y: -1.5}
+    pose: {x: 2.0, y: 0.3, yaw: -1.5708}
+  - id: 6
+    zone: "Main Dining"
+    table_center: {x: 9.0, y: -1.5}
+    pose: {x: 9.0, y: 0.3, yaw: -1.5708}
+  - id: 7
+    zone: "Private Dining"
+    table_center: {x: 0.0, y: 6.5}
+    pose: {x: 1.8, y: 6.5, yaw: 3.1416}
+  - id: 8
+    zone: "Private Dining"
+    table_center: {x: 3.5, y: 10.0}
+    pose: {x: 1.8, y: 10.0, yaw: 0.0}
